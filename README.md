@@ -20,3 +20,6 @@ Builds a webserver by standing up the following on ECS-AWS:
 8. Create an AWS EIP (elastic ip address) that connects to the private IP made in our network interface
 
 9. Create the AWS instance and install apache2
+
+-- After that, we try putting on a network load balancer first. I think the 2nd big part will be 
+breaking out this file into more usable parts to avoid having this giant main.tf file.
