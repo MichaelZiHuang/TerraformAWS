@@ -1,7 +1,7 @@
 provider "aws" {
   region     = "us-east-1"
-  access_key = "<->"
-  secret_key = "<->"
+  access_key = <->
+  secret_key = <->
 }
 
 resource "aws_vpc" "prod-vpc" {
@@ -87,12 +87,59 @@ resource "aws_network_interface" "web-server-nic" {
   security_groups = [aws_security_group.allow_web.id]
 }
 
+resource "aws_network_interface" "web-server-nic2" {
+  subnet_id       = aws_subnet.subnet-1.id
+  private_ips     = ["10.0.1.51"]
+  security_groups = [aws_security_group.allow_web.id]
+}
+
 resource "aws_eip" "one" {
   domain                      = "vpc"
   network_interface         = aws_network_interface.web-server-nic.id
   associate_with_private_ip = "10.0.1.50"
   depends_on                = [aws_internet_gateway.gw]
 }
+
+resource "aws_lb" "test" {
+  name               = "test-lb-tf"
+  internal           = false
+  load_balancer_type = "network"
+  subnets            = [aws_subnet.subnet-1.id]
+
+  enable_deletion_protection = true
+
+  tags = {
+    Environment = "production"
+  }
+}
+
+
+
+
+resource "aws_instance" "web-server-instance2" {
+    ami = "ami-06db4d78cb1d3bbf9"
+    instance_type = "t2.micro"
+    key_name = "Project-2-Keypair"
+    availability_zone = "us-east-1a"
+
+
+    network_interface {
+        device_index = 0
+        network_interface_id = aws_network_interface.web-server-nic2.id
+    }
+
+    user_data = <<-EOF
+                #!/bin/bash
+                sudo apt update -y
+                sudo apt install apache2 -y
+                sudo systemctl start apache2
+                sudo bash -c 'echo my second web server > /var/www/html/index.html'
+                EOF
+    tags = {
+        name = "web-server"
+    }
+}
+
 
 
 resource "aws_instance" "web-server-instance" {
@@ -111,7 +158,7 @@ resource "aws_instance" "web-server-instance" {
                 sudo apt update -y
                 sudo apt install apache2 -y
                 sudo systemctl start apache2
-                sudo bash -c 'echo your very first web server > /var/www/html/index.html'
+                sudo bash -c 'echo my first web server > /var/www/html/index.html'
                 EOF
     tags = {
         name = "web-server"
